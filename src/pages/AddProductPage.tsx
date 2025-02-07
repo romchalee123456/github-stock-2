@@ -19,6 +19,7 @@ function AddProductPage({ userId }: AddProductPageProps) {
   const [isAddingToExisting, setIsAddingToExisting] = useState(false);
   const [addQuantity, setAddQuantity] = useState(0);
   const [stockNote, setStockNote] = useState('');
+  const [notification, setNotification] = useState<{ message: string; type: string } | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -41,7 +42,6 @@ function AddProductPage({ userId }: AddProductPageProps) {
     e.preventDefault();
     try {
       if (isAddingToExisting && selectedProduct) {
-        // เพิ่มจำนวนสินค้าที่มีอยู่แล้ว
         const response = await axios.put(`https://server-weht.onrender.com/products/${selectedProduct._id}/stock/add`, {
           quantity: Number(addQuantity),
           description: stockNote || '',
@@ -49,17 +49,16 @@ function AddProductPage({ userId }: AddProductPageProps) {
         });
         
         if (response.data) {
-          alert('เพิ่มจำนวนสินค้าเรียบร้อยแล้ว');
+          setNotification({ message: 'เพิ่มจำนวนสินค้าเรียบร้อยแล้ว', type: 'success' });
+          setTimeout(() => setNotification(null), 3000); // hide after 3 seconds
           await fetchProducts();
           
-          // รีเซ็ตฟอร์ม
           setAddQuantity(0);
           setStockNote('');
           setSelectedProduct(null);
           setIsAddingToExisting(false);
         }
       } else {
-        // เพิ่มสินค้าใหม่
         const response = await axios.post('https://server-weht.onrender.com/products', {
           name: productName,
           description: description || '',
@@ -68,10 +67,10 @@ function AddProductPage({ userId }: AddProductPageProps) {
         });
         
         if (response.data) {
-          alert('เพิ่มสินค้าใหม่เรียบร้อยแล้ว');
+          setNotification({ message: 'เพิ่มสินค้าใหม่เรียบร้อยแล้ว', type: 'success' });
+          setTimeout(() => setNotification(null), 3000); // hide after 3 seconds
           await fetchProducts();
           
-          // รีเซ็ตฟอร์ม
           setProductName('');
           setDescription('');
           setPrice(0);
@@ -81,7 +80,8 @@ function AddProductPage({ userId }: AddProductPageProps) {
     } catch (error: any) {
       console.error('Error saving product:', error);
       const errorMessage = error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
-      alert(errorMessage);
+      setNotification({ message: errorMessage, type: 'error' });
+      setTimeout(() => setNotification(null), 3000); // hide after 3 seconds
     }
   };
 
@@ -229,7 +229,7 @@ function AddProductPage({ userId }: AddProductPageProps) {
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                     value={stockNote}
                     onChange={(e) => setStockNote(e.target.value)}
-                    placeholder="ระบุหมายเหตุการเพิ่มสต็อก (ถ้ามี)"
+                    placeholder="หมายเหตุการเพิ่มสต็อก (ถ้ามี)"
                   />
                 </div>
               )}
@@ -238,12 +238,22 @@ function AddProductPage({ userId }: AddProductPageProps) {
 
           <button
             type="submit"
-            className="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800"
+            className="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            {isAddingToExisting ? 'เพิ่มจำนวนสินค้า' : 'เพิ่มสินค้าใหม่'}
+            {isAddingToExisting ? 'เพิ่มจำนวนสินค้า' : 'เพิ่มสินค้า'}
           </button>
         </form>
       </div>
+
+      {notification && (
+        <div
+          className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded-md ${
+            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } text-white`}
+        >
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 }
