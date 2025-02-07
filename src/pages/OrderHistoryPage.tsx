@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Printer, ChevronDown, ChevronUp, FileDown } from 'lucide-react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import type { StockHistory } from '../types';
 
 interface GroupedHistory {
@@ -67,6 +69,53 @@ function OrderHistoryPage() {
     return items.reduce((sum, item) => sum + item.total, 0);
   };
 
+  const handleSavePDF = async (billId: string) => {
+    const billElement = document.getElementById(billId);
+    if (billElement) {
+      try {
+        const items = stockHistory.filter(item => item.billId === billId);
+        const doc = new jsPDF();
+        
+        // ข้อมูลเอกสาร
+        const billInfo = items[0];
+        const billDate = new Date(billInfo.date);
+        const formattedDate = `${billDate.getDate()}/${billDate.getMonth() + 1}/${billDate.getFullYear() + 543}`;
+        
+        doc.setFont('Sarabun'); // ใช้ฟอนต์ Sarabun
+        doc.setFontSize(12);
+        
+        // พิมพ์ข้อมูลหัวเอกสาร
+        doc.text(`เลขที่เอกสาร: ${billId}`, 10, 10);
+        doc.text(`วันที่: ${formattedDate}`, 10, 15);
+        doc.text(`สถานที่: ${billInfo.location}`, 10, 20);
+        doc.text(`ผู้เบิก: ${billInfo.username}`, 10, 25);
+
+        // สร้างตารางสำหรับรายการสินค้า
+        const startY = 35;
+        doc.autoTable({
+          head: [['สินค้า', 'จำนวน', 'ราคาต่อหน่วย', 'ราคารวม']],
+          body: items.map(item => [
+            item.productName,
+            item.quantity,
+            `฿${(item.total / item.quantity).toFixed(2)}`,
+            `฿${item.total.toFixed(2)}`,
+          ]),
+          startY,
+        });
+
+        // ยอดรวมทั้งหมด
+        const total = calculateBillTotal(items);
+        doc.text(`ยอดรวมทั้งหมด: ฿${total.toFixed(2)}`, 10, doc.lastAutoTable.finalY + 10);
+
+        // บันทึกไฟล์ PDF
+        doc.save(`${billId}-order-history.pdf`);
+      } catch (error) {
+        console.error('Error saving PDF:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึก PDF');
+      }
+    }
+  };
+
   const handlePrint = async () => {
     if (printRef.current) {
       try {
@@ -103,12 +152,6 @@ function OrderHistoryPage() {
         alert('เกิดข้อผิดพลาดในการพิมพ์');
       }
     }
-  };
-
-  const handleSavePDF = async () => {
-    // Here you would implement PDF generation and download
-    // For now, we'll just show an alert
-    alert('ฟังก์ชันการบันทึก PDF จะถูกเพิ่มในเวอร์ชันถัดไป');
   };
 
   if (loading) {
@@ -157,7 +200,7 @@ function OrderHistoryPage() {
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden" ref={printRef}>
           {Object.entries(groupedHistory).map(([billId, items]) => (
-            <div key={billId} className="border-b last:border-b-0">
+            <div key={billId} id={billId} className="border-b last:border-b-0">
               <div
                 className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
                 onClick={() => toggleBillDetails(billId)}
@@ -224,33 +267,33 @@ function OrderHistoryPage() {
                     </tbody>
                   </table>
                   {items[0].description && (
-                    <div className="mt-4">
-                      <div className="text-sm text-gray-500">หมายเหตุ</div>
-                      <div>{items[0].description}</div>
+                    <div className="mt-4 flex justify-between items-center">
+                      <div>
+                        <div className="text-sm text-gray-500">หมายเหตุ</div>
+                        <div>{items[0].description}</div>
+                      </div>
                     </div>
                   )}
+                  <div className="mt-4 flex justify-end space-x-4">
+                    <button
+                      onClick={() => handleSavePDF(billId)}
+                      className="px-4 py-2 text-white bg-[#8B4513] hover:bg-[#6c3f24] rounded"
+                    >
+                      <Printer className="h-4 w-4 inline-block mr-2" />
+                      บันทึกเป็น PDF
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="px-4 py-2 text-white bg-[#8B4513] hover:bg-[#6c3f24] rounded"
+                    >
+                      <FileDown className="h-4 w-4 inline-block mr-2" />
+                      พิมพ์
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           ))}
-        </div>
-
-        {/* Fixed position buttons at bottom right */}
-        <div className="fixed bottom-8 right-8 flex space-x-4">
-          <button
-            onClick={handleSavePDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 shadow-lg"
-          >
-            <FileDown className="h-4 w-4" />
-            <span>บันทึก PDF</span>
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 shadow-lg"
-          >
-            <Printer className="h-4 w-4" />
-            <span>พิมพ์รายงาน</span>
-          </button>
         </div>
       </div>
     </div>
