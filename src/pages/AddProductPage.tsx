@@ -245,15 +245,16 @@ function AddProductPage({ userId }: AddProductPageProps) {
         </form>
       </div>
 
-      {notification && (
-        <div
-          className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded-md ${
-            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          } text-white`}
-        >
-          {notification.message}
-        </div>
-      )}
+    {notification && (
+  <div
+    className={`fixed top-4 right-4 p-4 rounded-sd ${
+      notification.type === 'success' ? 'bg-green-200' : 'bg-red-200'
+    } text-black shadow-lg`}
+  >
+    {notification.message}
+  </div>
+)}
+
     </div>
   );
 }
