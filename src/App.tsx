@@ -39,6 +39,8 @@ function App() {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  const isAdmin = user.username === 'admin';
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <aside className="w-64 bg-[#8B4513] text-white">
@@ -51,20 +53,24 @@ function App() {
           <p className="font-medium">{user.username}</p>
         </div>
         <nav className="mt-8 px-4 space-y-2">
-          {[{ tab: 'productList', icon: Home, label: 'หน้าหลัก' },
+          {[
+            { tab: 'productList', icon: Home, label: 'หน้าหลัก' },
             { tab: 'requisition', icon: Boxes, label: 'เบิกสินค้า' },
             { tab: 'addProduct', icon: PlusSquare, label: 'เพิ่มสินค้า' },
             { tab: 'orderHistory', icon: Clock, label: 'ประวัติการเบิกสินค้า' },
-            ...(user.role === 'admin' ? [{ tab: 'addUser', icon: Users, label: 'เพิ่มผู้ใช้' }] : []),
-            { tab: 'settings', icon: Settings, label: 'ตั้งค่า' }].map(({ tab, icon: Icon, label }) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex items-center space-x-2 py-2 px-4 rounded hover:bg-[#A0522D] w-full justify-start ${activeTab === tab ? 'bg-[#A0522D]' : ''}`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{label}</span>
-              </button>
+            ...(isAdmin ? [{ tab: 'addUser', icon: Users, label: 'เพิ่มผู้ใช้' }] : []),
+            { tab: 'settings', icon: Settings, label: 'ตั้งค่า' }
+          ].map(({ tab, icon: Icon, label }) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center space-x-2 py-2 px-4 rounded hover:bg-[#A0522D] w-full justify-start ${
+                activeTab === tab ? 'bg-[#A0522D]' : ''
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
+            </button>
           ))}
           <button
             onClick={handleLogout}
@@ -76,10 +82,10 @@ function App() {
       </aside>
       <main className="flex-1 max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {activeTab === 'requisition' && <RequisitionPage userId={user._id} username={user.username} />}
-        {activeTab === 'addProduct' && <AddProductPage userId={user._id}  />}
+        {activeTab === 'addProduct' && <AddProductPage userId={user._id} />}
         {activeTab === 'productList' && <ProductListPage />}
-        {activeTab === 'orderHistory' && <OrderHistoryPage/>}
-        {activeTab === 'addUser' && user.role === 'admin' && <AddUserPage />}
+        {activeTab === 'orderHistory' && <OrderHistoryPage />}
+        {activeTab === 'addUser' && isAdmin && <AddUserPage />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
     </div>
