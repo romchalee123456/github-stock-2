@@ -30,7 +30,10 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
 
   useEffect(() => {
     fetchProducts();
-    generateRequisitionNumber();
+    const lastBillNumber = localStorage.getItem('lastBillNumber') || '0';
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const requisitionNumber = `IB-${datePart}-${String(parseInt(lastBillNumber, 10) + 1).padStart(4, '0')}`;
+  setRequisitionNumber(requisitionNumber);
   }, []);
 
   const fetchProducts = async () => {
@@ -71,9 +74,10 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
 
   const generateRequisitionNumber = () => {
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-    const randomPart = String(Math.floor(1000 + Math.random() * 9000)); // Random 4-digit number
-    setRequisitionNumber(`IB-${datePart}-${randomPart}`);
+    const lastNumber = parseInt(localStorage.getItem('lastBillNumber') || '0', 10) + 1;
+    return `IB-${datePart}-${String(lastNumber).padStart(4, '0')}`;
   };
+
 
   const handleRemoveItem = (id: string) => {
     setCartItems(cartItems.filter(item => item._id !== id));
@@ -83,6 +87,12 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
 
   const handleConfirmRequisition = async () => {
     try {
+            // สร้างเลขบิลใหม่เฉพาะเมื่อยืนยันการเบิก
+      const newRequisitionNumber = generateRequisitionNumber();
+
+      // บันทึกเลขบิลล่าสุดใน LocalStorage
+      localStorage.setItem('lastBillNumber', (parseInt(localStorage.getItem('lastBillNumber') || '0', 10) + 1).toString());
+
       // Process each item in the cart
       for (const item of cartItems) {
         const total = item.orderQuantity * item.price; // Calculate total for each item
@@ -96,16 +106,18 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
           total,                             // Total = quantity * price
           description: notes || 'Stock withdrawal', // Optional description (can be the notes)
           location,                          // The location of the withdrawal
-          billId: requisitionNumber,
+          billId: newRequisitionNumber, // ใช้เลขบิลใหม่
           productName: item.name             // The requisition number (ใบเบิก)
         });
       }
-
+// อัปเดตเลขบิลใน State เพื่อแสดงผลหลังการยืนยัน
+      setRequisitionNumber(newRequisitionNumber);
+      
       alert('บันทึกการเบิกสินค้าเรียบร้อยแล้ว');
       setIsDialogOpen(false);
       setCartItems([]);
       setNotes('');
-      generateRequisitionNumber();
+     
       await fetchProducts();  // Fetch the updated product data
     } catch (error: any) {
       console.error('Error processing withdrawal:', error);
