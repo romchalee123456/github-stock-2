@@ -125,7 +125,7 @@ function AddProductPage({ userId }: AddProductPageProps) {
               setStockNote('');
               setSelectedProduct(null);
             }}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            className="bg-black text-white px-4 py-2 rounded-md "
           >
             {isAddingToExisting ? 'เพิ่มสินค้าใหม่' : 'เพิ่มจำนวนสินค้าที่มีอยู่'}
           </button>
