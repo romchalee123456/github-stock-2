@@ -16,7 +16,7 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requisitionDate, setRequisitionDate] = useState(new Date().toISOString().slice(0, 10));
-  const [requisitionNumber, setRequisitionNumber] = useState('IB-000001');
+  const [requisitionNumber, setRequisitionNumber] = useState('');
   const [location, setLocation] = useState('บริษัท FMC สาขาใหญ่');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -30,6 +30,7 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
 
   useEffect(() => {
     fetchProducts();
+    generateRequisitionNumber();
   }, []);
 
   const fetchProducts = async () => {
@@ -68,6 +69,12 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
     ));
   };
 
+  const generateRequisitionNumber = () => {
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const randomPart = String(Math.floor(1000 + Math.random() * 9000)); // Random 4-digit number
+    setRequisitionNumber(`IB-${datePart}-${randomPart}`);
+  };
+
   const handleRemoveItem = (id: string) => {
     setCartItems(cartItems.filter(item => item._id !== id));
   };
@@ -98,6 +105,7 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
       setIsDialogOpen(false);
       setCartItems([]);
       setNotes('');
+      generateRequisitionNumber();
       await fetchProducts();  // Fetch the updated product data
     } catch (error: any) {
       console.error('Error processing withdrawal:', error);
@@ -157,7 +165,7 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
                     <div key={product._id} className="flex items-center justify-between border-b pb-4">
                       <div>
                         <h3 className="font-medium">{product.name}</h3>
-                        <p className="text-gray-600">${product.price.toFixed(2)}</p>
+                        <p className="text-gray-600">฿{product.price.toFixed(2)}</p>
                       </div>
                       <button
                         onClick={() => handleAddToCart(product)}
@@ -242,8 +250,8 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-gray-600">
-                        ราคา: ${item.price.toFixed(2)} x {item.orderQuantity} = 
-                        ${(item.price * item.orderQuantity).toFixed(2)}
+                        ราคา: ฿{item.price.toFixed(2)} x {item.orderQuantity} = 
+                        ฿{(item.price * item.orderQuantity).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -273,7 +281,7 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold text-lg">
                     <span>ยอดรวมทั้งหมด</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>฿{total.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -316,13 +324,13 @@ function RequisitionPage({ userId, username }: RequisitionPageProps) {
                   <tr key={item._id} className="border-b">
                     <td className="py-2">{item.name}</td>
                     <td className="text-right">{item.orderQuantity}</td>
-                    <td className="text-right">${item.price.toFixed(2)}</td>
-                    <td className="text-right">${(item.price * item.orderQuantity).toFixed(2)}</td>
+                    <td className="text-right">฿{item.price.toFixed(2)}</td>
+                    <td className="text-right">฿{(item.price * item.orderQuantity).toFixed(2)}</td>
                   </tr>
                 ))}
                 <tr className="font-semibold">
                   <td colSpan={3} className="text-right py-2">ยอดรวมทั้งหมด</td>
-                  <td className="text-right">${total.toFixed(2)}</td>
+                  <td className="text-right">฿{total.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
