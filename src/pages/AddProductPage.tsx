@@ -125,7 +125,7 @@ function AddProductPage({ userId }: AddProductPageProps) {
               setStockNote('');
               setSelectedProduct(null);
             }}
-            className="bg-black text-white px-4 py-2 rounded-md "
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 "
           >
             {isAddingToExisting ? 'เพิ่มสินค้าใหม่' : 'เพิ่มจำนวนสินค้าที่มีอยู่'}
           </button>
@@ -238,7 +238,7 @@ function AddProductPage({ userId }: AddProductPageProps) {
 
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="bg-black text-white px-4 py-2 rounded-md"
           >
             {isAddingToExisting ? 'เพิ่มจำนวนสินค้า' : 'เพิ่มสินค้า'}
           </button>
