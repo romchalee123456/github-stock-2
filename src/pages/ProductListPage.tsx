@@ -105,7 +105,7 @@ function ProductListPage() {
                   <td className="p-4">
                     <div className="font-medium">{product.name}</div>
                   </td>
-                  <td className="p-4">{Number(product.price).toFixed(2)} B</td>
+                  <td className="p-4">฿{Number(product.price).toFixed(2)}</td>
                   <td className="p-4">{product.stock} ในสต็อก</td>
                   <td className="p-4">
                     <p className="text-gray-600 truncate max-w-md">
