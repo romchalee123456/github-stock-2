@@ -6,32 +6,41 @@ function AddUserPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [uid, setUid] = useState('');
   const [role, setRole] = useState('user');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+      if (type === 'success') {
+        // Reset form on success
+        setUsername('');
+        setPassword('');
+        setName('');
+        setUid('');
+      }
+    }, 3000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
-      setError(null);
       
       await axios.post('https://server-weht.onrender.com/users', {
         username,
         password,
         name,
-        role
+        uid,
       });
       
-      alert('เพิ่มผู้ใช้เรียบร้อยแล้ว');
-      // Reset form
-      setUsername('');
-      setPassword('');
-      setName('');
-      setRole('user');
+      showNotification('เพิ่มผู้ใช้เรียบร้อยแล้ว', 'success');
     } catch (error) {
       console.error('Error adding user:', error);
-      setError('ไม่สามารถเพิ่มผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง');
+      showNotification('ไม่สามารถเพิ่มผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง', 'error');
     } finally {
       setLoading(false);
     }
@@ -54,13 +63,19 @@ function AddUserPage() {
             <span>เพิ่มข้อมูลผู้ใช้</span>
           </h2>
           
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
-              {error}
-            </div>
-          )}
-          
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                รหัสพนักงาน (UID)
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                value={uid}
+                onChange={(e) => setUid(e.target.value)}
+                required
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 ชื่อผู้ใช้
@@ -121,6 +136,16 @@ function AddUserPage() {
           </form>
         </div>
       </div>
+
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            notification.type === 'success' ? 'bg-green-200' : 'bg-red-200'
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 }
