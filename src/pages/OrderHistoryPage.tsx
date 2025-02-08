@@ -9,6 +9,51 @@ interface GroupedHistory {
   [billId: string]: StockHistory[];
 }
 
+// Function to format currency (Bath)
+const formatCurrency = (amount: number): string => {
+  return `${amount.toFixed(2)} Bath`;
+};
+
+// Function to format company name
+const formatCompanyName = (location: string): string => {
+  return location
+    .replace('บริษัท', 'Company')
+    .replace('สาขา', 'Branch')
+    .replace('ใหญ่', 'Main')
+    .replace(/FMC สาขา (\d+)/, 'FMC Branch $1')
+    .replace(/FMC สาขาใหญ่/, 'FMC Main Branch');
+};
+
+// Function to format date to English
+const formatDate = (date: Date): string => {
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+// Function to transliterate Thai text to English
+const transliterate = (text: string): string => {
+  const thaiToEng: { [key: string]: string } = {
+    'ก': 'k', 'ข': 'kh', 'ค': 'kh', 'ฆ': 'kh', 'ง': 'ng',
+    'จ': 'ch', 'ฉ': 'ch', 'ช': 'ch', 'ซ': 's', 'ฌ': 'ch',
+    'ญ': 'y', 'ฎ': 'd', 'ฏ': 't', 'ฐ': 'th', 'ฑ': 'th',
+    'ฒ': 'th', 'ณ': 'n', 'ด': 'd', 'ต': 't', 'ถ': 'th',
+    'ท': 'th', 'ธ': 'th', 'น': 'n', 'บ': 'b', 'ป': 'p',
+    'ผ': 'ph', 'ฝ': 'f', 'พ': 'ph', 'ฟ': 'f', 'ภ': 'ph',
+    'ม': 'm', 'ย': 'y', 'ร': 'r', 'ล': 'l', 'ว': 'w',
+    'ศ': 's', 'ษ': 's', 'ส': 's', 'ห': 'h', 'ฬ': 'l',
+    'อ': 'a', 'ฮ': 'h', 'ะ': 'a', 'ั': 'a', 'า': 'a',
+    'ำ': 'am', 'ิ': 'i', 'ี': 'i', 'ึ': 'ue', 'ื': 'ue',
+    'ุ': 'u', 'ู': 'u', 'เ': 'e', 'แ': 'ae', 'โ': 'o',
+    'ใ': 'ai', 'ไ': 'ai', '่': '', '้': '', '๊': '', '๋': '',
+    '็': '', '์': '', 'ํ': '', 'ๆ': ''
+  };
+
+  return text.split('').map(char => thaiToEng[char] || char).join('');
+};
+
 function OrderHistoryPage() {
   const [stockHistory, setStockHistory] = useState<StockHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,54 +129,37 @@ function OrderHistoryPage() {
         const items = stockHistory.filter(item => item.billId === billId);
         const doc = new jsPDF();
         
-        // Add Thai font support
-        doc.addFont('https://fonts.gstatic.com/ea/sarabun/v8/Sarabun-Regular.ttf', 'Sarabun', 'normal');
-        doc.addFont('https://fonts.gstatic.com/ea/sarabun/v8/Sarabun-Bold.ttf', 'Sarabun', 'bold');
-        doc.setFont('Sarabun');
-        
         // Document info
         const billInfo = items[0];
         const billDate = new Date(billInfo.date);
-        const formattedDate = `${billDate.getDate()}/${billDate.getMonth() + 1}/${billDate.getFullYear() + 543}`;
         
         doc.setFontSize(16);
-        doc.setFont('Sarabun', 'bold');
-        doc.text('รายการเบิกสินค้า', 105, 15, { align: 'center' });
+        doc.text('Withdrawal Report', 105, 15, { align: 'center' });
         
         doc.setFontSize(12);
-        doc.setFont('Sarabun', 'normal');
-        doc.text(`เลขที่เอกสาร: ${billId}`, 10, 30);
-        doc.text(`วันที่: ${formattedDate}`, 10, 40);
-        doc.text(`สถานที่: ${billInfo.location}`, 10, 50);
-        doc.text(`ผู้เบิก: ${billInfo.username}`, 10, 60);
+        doc.text(`Document No: ${billId}`, 10, 30);
+        doc.text(`Date: ${formatDate(billDate)}`, 10, 40);
+        doc.text(`Location: ${formatCompanyName(billInfo.location)}`, 10, 50);
+        doc.text(`Withdrawn by: ${transliterate(billInfo.username)}`, 10, 60);
 
         doc.autoTable({
-          head: [['สินค้า', 'จำนวน', 'ราคาต่อหน่วย', 'ราคารวม']],
+          head: [['Product', 'Quantity', 'Unit Price', 'Total']],
           body: items.map(item => [
-            item.productName,
+            transliterate(item.productName),
             item.quantity,
-            `฿${(item.total / item.quantity).toFixed(2)}`,
-            `฿${item.total.toFixed(2)}`,
+            formatCurrency(item.total / item.quantity),
+            formatCurrency(item.total),
           ]),
           startY: 70,
           headStyles: {
             fillColor: [0, 0, 0],
-            font: 'Sarabun',
-            fontStyle: 'bold'
           },
-          bodyStyles: {
-            font: 'Sarabun'
-          },
-          styles: {
-            font: 'Sarabun'
-          }
         });
 
         const total = calculateBillTotal(items);
-        doc.setFont('Sarabun', 'bold');
-        doc.text(`ยอดรวมทั้งหมด: ฿${total.toFixed(2)}`, 10, doc.lastAutoTable.finalY + 10);
+        doc.text(`Total Amount: ${formatCurrency(total)}`, 10, doc.lastAutoTable.finalY + 10);
 
-        doc.save(`${billId}-order-history.pdf`);
+        doc.save(`${billId}-withdrawal-report.pdf`);
         showNotification('บันทึก PDF เรียบร้อยแล้ว', 'success');
       } catch (error) {
         console.error('Error saving PDF:', error);
@@ -144,7 +172,8 @@ function OrderHistoryPage() {
     const billElement = document.getElementById(billId);
     if (billElement) {
       try {
-        const printContent = billElement.innerHTML;
+        const items = stockHistory.filter(item => item.billId === billId);
+        const billInfo = items[0];
         const originalContent = document.body.innerHTML;
 
         document.body.innerHTML = `
@@ -153,6 +182,16 @@ function OrderHistoryPage() {
             body { 
               font-family: 'Sarabun', sans-serif;
               padding: 20px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .document-info {
+              margin-bottom: 30px;
+            }
+            .document-info p {
+              margin: 8px 0;
             }
             table { 
               width: 100%;
@@ -168,30 +207,61 @@ function OrderHistoryPage() {
               background-color: #f8f9fa;
               font-weight: bold;
             }
-            .bill-header {
-              margin-bottom: 20px;
-            }
-            .bill-header h2 {
-              margin-bottom: 10px;
-            }
-            .bill-total {
-              margin-top: 20px;
-              font-weight: bold;
+            .total {
               text-align: right;
+              font-weight: bold;
+              margin-top: 20px;
+            }
+            .notes {
+              margin-top: 20px;
             }
             @media print {
-              .no-print { display: none; }
-              button { display: none; }
+              .no-print { 
+                display: none !important; 
+              }
+              @page {
+                margin: 2cm;
+              }
             }
           </style>
-          <div class="bill-header">
-            <h2>รายการเบิกสินค้า</h2>
-            <p>เลขที่เอกสาร: ${billId}</p>
-            <p>วันที่: ${new Date(stockHistory.find(item => item.billId === billId)?.date || '').toLocaleDateString('th-TH')}</p>
-            <p>สถานที่: ${stockHistory.find(item => item.billId === billId)?.location}</p>
-            <p>ผู้เบิก: ${stockHistory.find(item => item.billId === billId)?.username}</p>
+          <div class="header">
+            <h2>Withdrawal Report</h2>
           </div>
-          ${printContent}
+          <div class="document-info">
+            <p><strong>Document No:</strong> ${billId}</p>
+            <p><strong>Date:</strong> ${formatDate(new Date(billInfo.date))}</p>
+            <p><strong>Location:</strong> ${formatCompanyName(billInfo.location)}</p>
+            <p><strong>Withdrawn by:</strong> ${billInfo.username}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Unit Price</th>
+                <th style="text-align: right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.productName}</td>
+                  <td style="text-align: right">${item.quantity}</td>
+                  <td style="text-align: right">${formatCurrency(item.total / item.quantity)}</td>
+                  <td style="text-align: right">${formatCurrency(item.total)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="total">
+            Total Amount: ${formatCurrency(calculateBillTotal(items))}
+          </div>
+          ${billInfo.description ? `
+            <div class="notes">
+              <strong>Notes:</strong>
+              <p>${billInfo.description}</p>
+            </div>
+          ` : ''}
         `;
 
         window.print();
@@ -319,24 +389,22 @@ function OrderHistoryPage() {
                     </tbody>
                   </table>
                   {items[0].description && (
-                    <div className="mt-4 flex justify-between items-center">
-                      <div>
-                        <div className="text-sm text-gray-500">หมายเหตุ</div>
-                        <div>{items[0].description}</div>
-                      </div>
+                    <div className="mt-4">
+                      <div className="text-sm text-gray-500">หมายเหตุ</div>
+                      <div>{items[0].description}</div>
                     </div>
                   )}
-                  <div className="mt-4 flex justify-end space-x-4">
+                  <div className="mt-4 flex justify-end space-x-4 action-buttons">
                     <button
                       onClick={() => handleSavePDF(billId)}
-                      className="px-4 py-2 text-white bg-black hover:bg-gray-800 rounded flex items-center space-x-2"
+                      className="px-4 py-2 text-white bg-black hover:bg-gray-800 rounded flex items-center space-x-2 no-print"
                     >
                       <FileDown className="h-4 w-4" />
                       <span>บันทึกเป็น PDF</span>
                     </button>
                     <button
                       onClick={() => handlePrint(billId)}
-                      className="px-4 py-2 text-white bg-black hover:bg-gray-800 rounded flex items-center space-x-2"
+                      className="px-4 py-2 text-white bg-black hover:bg-gray-800 rounded flex items-center space-x-2 no-print"
                     >
                       <Printer className="h-4 w-4" />
                       <span>พิมพ์</span>
