@@ -24,7 +24,7 @@ export interface OrderHistory {
 export interface StockHistory {
   _id: string;
   productId: string;
-  productName: string;  // เพิ่ม productName
+  productName: string;
   userId: string;
   username: string;
   quantity: number;
@@ -51,5 +51,6 @@ export interface User {
   _id: string;
   username: string;
   password: string;
+  uid: string;
   role: 'admin' | 'user';
 }
